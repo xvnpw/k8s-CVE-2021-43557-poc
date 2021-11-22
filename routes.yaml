@@ -1,0 +1,39 @@
+apiVersion: apisix.apache.org/v2beta1
+kind: ApisixRoute
+metadata:
+  name: public-service-route
+spec:
+  http:
+  - name: public-service-rule
+    match:
+      hosts:
+      - app.test
+      paths:
+      - /public-service/*
+    backends:
+        - serviceName: public-service
+          servicePort: 8080
+    plugins:
+      - name: proxy-rewrite
+        enable: true
+        config:
+          regex_uri: ["/public-service/(.*)", "/$1"]
+  - name: protected-service-rule
+    match:
+      hosts:
+      - app.test
+      paths:
+      - /protected-service/*
+    backends:
+        - serviceName: protected-service
+          servicePort: 8080
+    plugins:
+      - name: uri-blocker
+        enable: true
+        config:
+          block_rules: ["^/protected-service(/?).*"]
+          case_insensitive: true
+      - name: proxy-rewrite
+        enable: true
+        config:
+          regex_uri: ["/protected-service/(.*)", "/$1"]
